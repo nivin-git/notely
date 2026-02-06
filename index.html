@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notely</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#00e5ff">
+</head>
+
+<body>
+<div class="layout">
+
+<!-- ================= SIDEBAR ================= -->
+<div class="sidebar">
+    <h2>📚 Subjects</h2>
+
+    <!-- Create Subject -->
+    <form action="/add_subject" method="post" class="subject-form">
+        <input type="text" name="subject" placeholder="New subject" required>
+        <button type="submit">➕</button>
+    </form>
+
+    <ul>
+        {% for sub in subjects %}
+        <li class="{{ 'active' if sub == subject else '' }}">
+            <a href="{{ url_for('notes', subject=sub) }}">
+                {{ sub }}
+
+                <!-- 🔔 Reminder Badge -->
+                {% if subject_counts and subject_counts.get(sub, 0) > 0 %}
+                <span class="badge">{{ subject_counts[sub] }}</span>
+                {% endif %}
+            </a>
+
+            <!-- Delete Subject -->
+            <form action="/delete_subject" method="post" style="display:inline;">
+                <input type="hidden" name="subject" value="{{ sub }}">
+                <button class="del"
+                        onclick="return confirm('Delete subject & all notes?')">
+                    🗑
+                </button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- ================= MAIN ================= -->
+<div class="container">
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <h1>📝 {{ user }}'s Notes</h1>
+        <button id="darkToggle">🌙</button>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard">
+        <div class="card">
+            <h2>{{ notes|length }}</h2>
+            <p>Total Notes</p>
+        </div>
+        <div class="card">
+            <h2>{{ subject if subject else "—" }}</h2>
+            <p>Current Subject</p>
+        </div>
+    </div>
+
+    <!-- Add Note -->
+    {% if subject %}
+    <form method="POST" enctype="multipart/form-data">
+        <textarea name="note"
+                  id="noteBox"
+                  placeholder="Write your note..."
+                  required></textarea>
+
+        <input type="file"
+               name="file"
+               accept="image/*,application/pdf">
+
+        <button type="submit">💾 Save</button>
+    </form>
+    {% endif %}
+
+    <!-- Notes -->
+    {% if subject %}
+    <h3>Notes for: <b>{{ subject }}</b></h3>
+
+    <ul class="notes">
+        {% for note in notes %}
+        <li>
+            {{ note }}
+
+            <!-- Edit -->
+            <form action="/edit" method="post" style="display:inline;">
+                <input type="hidden" name="subject" value="{{ subject }}">
+                <input type="hidden" name="index" value="{{ loop.index0 }}">
+                <input type="text" name="new_note" placeholder="Edit note" required>
+                <button type="submit">✏</button>
+            </form>
+
+            <!-- Delete -->
+            <form action="/delete" method="post" style="display:inline;">
+                <input type="hidden" name="subject" value="{{ subject }}">
+                <input type="hidden" name="index" value="{{ loop.index0 }}">
+                <button class="del"
+                        onclick="return confirm('Delete this note?')">❌</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Files -->
+    <h3>📎 Files</h3>
+    <div class="files">
+        {% for file in files %}
+        <div class="file-box">
+
+            {% if file.endswith('.pdf') %}
+            <a href="{{ url_for('uploaded_file', username=user, subject=subject, filename=file) }}"
+               target="_blank">📄 {{ file }}</a>
+            {% else %}
+            <img src="{{ url_for('uploaded_file', username=user, subject=subject, filename=file) }}"
+                 class="thumb">
+            {% endif %}
+
+            <form action="/delete_file" method="post">
+                <input type="hidden" name="subject" value="{{ subject }}">
+                <input type="hidden" name="filename" value="{{ file }}">
+                <button class="del"
+                        onclick="return confirm('Delete this file?')">🗑</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <p style="margin-top:20px;">
+        👉 Select or create a subject to start writing notes
+    </p>
+    {% endif %}
+
+    <a href="/logout">🚪 Logout</a>
+
+</div>
+</div>
+
+<!-- Service Worker -->
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/static/service-worker.js");
+}
+</script>
+
+<!-- Dark Mode -->
+<script>
+const toggle = document.getElementById("darkToggle");
+
+toggle.onclick = () => {
+  document.body.classList.toggle("dark");
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("dark") ? "dark" : "light"
+  );
+};
+
+if (localStorage.getItem("theme") === "dark") {
+  document.body.classList.add("dark");
+}
+</script>
+
+</body>
+</html>

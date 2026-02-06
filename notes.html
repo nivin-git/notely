@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notes</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="box">
+    <h2>📚 {{ user }}'s Notes</h2>
+
+    <form method="GET">
+        <input name="subject" placeholder="Enter subject" required>
+        <button>Open Subject</button>
+    </form>
+
+    {% if subject %}
+    <h3>Subject: {{ subject }}</h3>
+
+    <form method="POST">
+        <input type="hidden" name="subject" value="{{ subject }}">
+        <textarea name="note" placeholder="Write note..." required></textarea>
+        <button>Add Note</button>
+    </form>
+
+    <ul>
+        {% for note in notes %}
+        <li>
+            {{ note }}
+            <form action="/edit" method="POST">
+                <input type="hidden" name="subject" value="{{ subject }}">
+                <input type="hidden" name="index" value="{{ loop.index0 }}">
+                <input name="new_note" placeholder="Edit note" required>
+                <button>Edit</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <a href="/logout">🚪 Logout</a>
+</div>
+</body>
+</html>
